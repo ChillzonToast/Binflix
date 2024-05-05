@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BinFlix</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #222;
+    color: #ccc; /* Dark grey color */
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 10px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 4rem; /* Increase font size */
+    position: relative;
+    display: inline-block;
+    color: #ff0; /* Yellow accent color */
+    -webkit-text-stroke: 2px #222; /* Grey stroke */
+    text-stroke: 2px #222; /* Grey stroke */
+    transition: color 0.3s, -webkit-text-stroke 0.3s, text-stroke 0.3s; /* Add transition effect */
+  }
+  h1:hover {
+    color: #222; /* Change font color to grey on hover */
+    -webkit-text-stroke: 2px #ff0; /* Change stroke color to yellow on hover */
+    text-stroke: 2px #ff0; /* Change stroke color to yellow on hover */
+  }
+  .movies {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .movie {
+    width: calc(25% - 20px);
+    margin-bottom: 20px;
+    background-color: #333;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    transform: scale(0.90);
+  }
+  .movie:hover {
+    transform: scale(1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  }
+  .movie img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+  }
+  .movie-details {
+    padding: 10px;
+  }
+  .movie-title {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .movie-title-text {
+    padding: 10px;
+  }
+  .movie-rating {
+    color: #ccc;
+    font-size: 0.9rem;
+  }
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .overlay-content {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80%;
+    max-height:90%;
+    overflow: auto;
+  }
+/* width */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+/* Track */
+  ::-webkit-scrollbar-track {
+    background: #222;
+  }
+
+/* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #555;
+  }
+
+  .close-btn {
+    color: #fff;
+    font-size: 1.5rem;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+  }
+  .close-btn:hover {
+    color: #ff0;
+  }
+  .search-bar {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #333;
+    border: none;
+    color: #fff;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .search-bar::placeholder {
+    color: #aaa;
+  }
+  .popup-image-container {
+    margin-top: 20px;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    border-radius: 10px;
+    position: relative; /* Add this to position the button relative to this container */
+  }
+  .popup-image {
+    width: 100%;
+    display: block;
+    border-radius: 10px;
+    filter: brightness(50%);
+    position: relative; /* Ensure it can be stacked with z-index */
+    z-index: -1; /* Set z-index to send it to the back */
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>BinFlix</h1>
+  <input type="text" class="search-bar" id="searchInput" placeholder="Search..." oninput="searchMovies()">
+  <div class="movies" id="moviesContainer">
+    <!-- Movies will be dynamically added here -->
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-content" id="overlayContent">
+    <span class="close-btn" onclick="closeOverlay()">&times;</span>
+    <!-- Movie details will be displayed here -->
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    fetchMovies();
+  });
+
+  function fetchMovies() {
+    fetch('https://yts.mx/api/v2/list_movies.json?limit=20&sort_by=like_count')
+      .then(response => response.json())
+      .then(data => {
+        const movies = data.data.movies;
+        const moviesContainer = document.getElementById('moviesContainer');
+        moviesContainer.innerHTML = ''; // Clear previous movies
+
+        movies.forEach(movieData => {
+          const movieElement = document.createElement('div');
+          movieElement.classList.add('movie');
+
+          const imageUrl = movieData.medium_cover_image;
+          const title = movieData.title_long;
+          const rating = movieData.rating.toFixed(1); // Fixed rating to one decimal place
+          const runtime = movieData.runtime;
+
+          movieElement.innerHTML = `
+            <img src="${imageUrl}" alt="${title}">
+            <div class="movie-details">
+              <div class="movie-title">
+                <div class="movie-details-inner">
+                  <div class="movie-title-text">${title}</div>
+                  <div class="movie-rating">Rating: ${rating}</div>
+                  <div class="movie-rating">Runtime: ${runtime} minutes</div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Add click event listener to each movie card
+          movieElement.addEventListener('click', function() {
+            displayMovieDetails(movieData.id);
+          });
+
+          moviesContainer.appendChild(movieElement);
+        });
+      })
+      .catch(error => console.error('Error fetching movies:', error));
+  }
+
+  function searchMovies() {
+    const searchInput = document.getElementById('searchInput').value;
+    fetch(`https://yts.mx/api/v2/list_movies.json?query_term=${searchInput}&sort_by=like_count`)
+      .then(response => response.json())
+      .then(data => {
+        const movies = data.data.movies;
+        const moviesContainer = document.getElementById('moviesContainer');
+        moviesContainer.innerHTML = ''; // Clear previous search results
+
+        movies.forEach(movieData => {
+          const movieElement = document.createElement('div');
+          movieElement.classList.add('movie');
+
+          const imageUrl = movieData.medium_cover_image;
+          const title = movieData.title_long;
+          const rating = movieData.rating.toFixed(1); // Fixed rating to one decimal place
+          const runtime = movieData.runtime;
+
+          movieElement.innerHTML = `
+            <img src="${imageUrl}" alt="${title}">
+            <div class="movie-details">
+              <div class="movie-title">
+                <div class="movie-details-inner">
+                  <div class="movie-title-text">${title}</div>
+                  <div class="movie-rating">Rating: ${rating}</div>
+                  <div class="movie-rating">Runtime: ${runtime} minutes</div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Add click event listener to each movie card
+          movieElement.addEventListener('click', function() {
+            displayMovieDetails(movieData.id);
+          });
+
+          moviesContainer.appendChild(movieElement);
+        });
+      })
+      .catch(error => console.error('Error searching movies:', error));
+  }
+
+  function displayMovieDetails(movieId) {
+    fetch(`https://yts.mx/api/v2/movie_details.json?movie_id=${movieId}&with_images=true&with_cast=true`)
+      .then(response => response.json())
+      .then(data => {
+        const movie = data.data.movie;
+        const overlayContent = document.getElementById('overlayContent');
+
+        overlayContent.innerHTML = `
+          <span class="close-btn" onclick="closeOverlay()">&times;</span>
+          <div class="popup-image-container">
+            <iframe src="https://vidsrc.me/embed/movie?imdb=${movie.imdb_code}" style="width: 100%; height: 100%;" frameborder="0" referrerpolicy="origin" allowfullscreen></iframe>
+          </div>
+          <div class="movie-popup-info">
+            <h2>${movie.title_long}</h2>
+            <p>Rating: ${movie.rating.toFixed(1)}</p>
+            <p>Runtime: ${movie.runtime} minutes</p>
+            <p>Genres: ${movie.genres.join(', ')}</p>
+            <p>Description: ${movie.description_intro}</p>
+            <h3>Cast</h3>
+            <ul>
+              ${movie.cast.map(actor => `<li>${actor.name} (${actor.character_name})</li>`).join('')}
+            </ul>
+          </div>
+        `;
+
+        document.getElementById('overlay').style.display = 'block';
+      })
+      .catch(error => console.error('Error fetching movie details:', error));
+  }
+
+  function closeOverlay() {
+    document.getElementById('overlay').style.display = 'none';
+  }
+
+  function watchMovie(imdbId) {
+    // This function is not used anymore as the video is embedded directly
+  }
+</script>
+</body>
+</html>
